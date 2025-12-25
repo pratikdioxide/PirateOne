@@ -16,6 +16,6 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 socketserver.TCPServer.allow_reuse_address = True
 with socketserver.TCPServer(("0.0.0.0", PORT), MyHTTPRequestHandler) as httpd:
-    print(f"CineVerse server running on port {PORT}")
+    print(f"PirateOne server running on port {PORT}")
     print(f"Visit http://0.0.0.0:{PORT}")
     httpd.serve_forever()

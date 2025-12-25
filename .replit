@@ -12,19 +12,19 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "CineVerse Server"
+args = "PirateOne Server"
 
 [[workflows.workflow]]
-name = "CineVerse Server"
+name = "PirateOne Server"
 author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python server.py"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [[ports]]
 localPort = 5000

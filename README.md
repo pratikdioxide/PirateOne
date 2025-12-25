@@ -1,4 +1,4 @@
-# CineVerse
+# PirateOne
 
 A modern streaming platform built with HTML, CSS, and JavaScript featuring Movies, TV Shows, and Anime.
 

@@ -1,7 +1,7 @@
-# CineVerse - Your Ultimate Streaming Platform
+# PirateOne - Your Ultimate Streaming Platform
 
 ## Overview
-CineVerse is a modern, Netflix-style streaming platform built entirely with HTML, CSS, and JavaScript. It features a dark theme, seamless API integration, and a user-friendly interface for browsing movies, TV shows, and anime.
+PirateOne is a modern, Netflix-style streaming platform built entirely with HTML, CSS, and JavaScript. It features a dark theme, seamless API integration, and a user-friendly interface for browsing movies, TV shows, and anime.
 
 ## Features
 - **Dark Theme UI**: Pure black (#000000) background with #44BB91 accent color
@@ -52,9 +52,9 @@ The TMDB_API_KEY has already been added to your Replit Secrets. The application 
 3. Restart the workflow
 
 ### 3. Using the Application
-The server is automatically running on port 5000. Just open the webview to access CineVerse!
+The server is automatically running on port 5000. Just open the webview to access PirateOne!
 
-**First-time users**: You'll need to register an account to use CineVerse. Click "Sign up now" on the login page.
+**First-time users**: You'll need to register an account to use PirateOne. Click "Sign up now" on the login page.
 
 ## Project Structure
 ```
