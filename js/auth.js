@@ -255,7 +255,7 @@ async function getRating(id, type) {
 // Export everything (same interface as before)
 // ──────────────────────────────────────────────────────────────
 
-export {
+window.cineverseAuth = {
     register,
     login,
     logout,
@@ -268,6 +268,7 @@ export {
     getRatings,
     addRating,
     getRating,
-    // Optional: keep for fallback/future use
     generateAvatarUrl
 };
+
+console.log('cineverseAuth global object loaded successfully');
