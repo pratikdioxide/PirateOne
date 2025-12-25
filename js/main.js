@@ -37,8 +37,30 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
         await loadHomepage();
+        showNoticePopup();
     }
 });
+
+function showNoticePopup() {
+    const popup = document.getElementById('noticePopup');
+    const closeBtn = document.getElementById('closeNoticeBtn');
+    
+    if (!popup || !closeBtn) return;
+
+    // Check if notice was already shown in this session
+    if (!sessionStorage.getItem('noticeShown')) {
+        setTimeout(() => {
+            popup.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }, 1000);
+    }
+
+    closeBtn.addEventListener('click', () => {
+        popup.classList.remove('active');
+        document.body.style.overflow = '';
+        sessionStorage.setItem('noticeShown', 'true');
+    });
+}
 
 async function loadHomepage() {
     try {
