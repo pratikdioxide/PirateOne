@@ -1,6 +1,15 @@
-const USERS_KEY = 'cineverse_users';
-const CURRENT_USER_KEY = 'cineverse_current_user';
+// auth.js - Backend version (Neon Postgres + JWT)
+// Date: December 2025
 
+// ──────────────────────────────────────────────────────────────
+// Constants & Helpers
+// ──────────────────────────────────────────────────────────────
+
+const TOKEN_KEY = 'cineverse_token';
+const USER_KEY = 'cineverse_user';
+
+// You can keep this function if you want fallback avatar generation
+// (though backend will provide avatar now)
 const AVATAR_STYLES = ['avataaars', 'bottts', 'personas', 'lorelei', 'adventurer', 'pixel-art', 'fun-emoji'];
 
 function generateAvatarUrl(seed) {
@@ -8,142 +17,257 @@ function generateAvatarUrl(seed) {
     return `https://api.dicebear.com/7.x/${randomStyle}/svg?seed=${encodeURIComponent(seed)}`;
 }
 
-function getUsers() {
-    const users = localStorage.getItem(USERS_KEY);
-    return users ? JSON.parse(users) : [];
-}
+// ──────────────────────────────────────────────────────────────
+// Authentication Functions
+// ──────────────────────────────────────────────────────────────
 
-function saveUsers(users) {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
+/**
+ * Register new user - talks to backend
+ * @returns {Promise<boolean>} success
+ */
+async function register(name, email, password) {
+    try {
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, email, password })
+        });
 
-function register(name, email, password) {
-    const users = getUsers();
-
-    if (users.find(u => u.email === email)) {
-        return false;
-    }
-
-    const newUser = {
-        id: Date.now().toString(),
-        name,
-        email,
-        password,
-        avatar: generateAvatarUrl(email + Date.now()),
-        createdAt: new Date().toISOString()
-    };
-
-    users.push(newUser);
-    saveUsers(users);
-    return true;
-}
-
-function login(email, password) {
-    const users = getUsers();
-    const user = users.find(u => u.email === email && u.password === password);
-
-    if (user) {
-        if (!user.avatar) {
-            user.avatar = generateAvatarUrl(email + user.id);
-            saveUsers(users);
+        if (!response.ok) {
+            const data = await response.json();
+            alert(data.error || 'Registration failed');
+            return false;
         }
 
-        const userSession = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar,
-            createdAt: user.createdAt
-        };
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userSession));
+        const { token, user } = await response.json();
+
+        localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
         return true;
+    } catch (error) {
+        console.error('Registration error:', error);
+        alert('Something went wrong. Please try again later.');
+        return false;
     }
-    return false;
+}
+
+/**
+ * Login user - talks to backend
+ * @returns {Promise<boolean>} success
+ */
+async function login(email, password) {
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            alert(data.error || 'Login failed');
+            return false;
+        }
+
+        const { token, user } = await response.json();
+
+        localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        return true;
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('Something went wrong. Please try again later.');
+        return false;
+    }
 }
 
 function logout() {
-    localStorage.removeItem(CURRENT_USER_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    window.location.href = 'login.html'; // or '/' depending on your flow
 }
 
 function getCurrentUser() {
-    const user = localStorage.getItem(CURRENT_USER_KEY);
-    return user ? JSON.parse(user) : null;
+    const userJson = localStorage.getItem(USER_KEY);
+    return userJson ? JSON.parse(userJson) : null;
+}
+
+function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
 }
 
 function isLoggedIn() {
-    return getCurrentUser() !== null;
+    return !!getToken() && !!getCurrentUser();
 }
 
 function checkAuth() {
-    // Authentication is now optional, just return user status
+    // You can add token validation/expiration check here in future
     return isLoggedIn();
 }
 
-function updateUserName(newName) {
-    const users = getUsers();
-    const currentUser = getCurrentUser();
+/**
+ * Update user's display name
+ * @param {string} newName
+ */
+async function updateUserName(newName) {
+    const token = getToken();
+    if (!token || !newName?.trim()) return false;
 
-    if (currentUser) {
-        const userIndex = users.findIndex(u => u.id === currentUser.id);
-        if (userIndex !== -1) {
-            users[userIndex].name = newName;
-            saveUsers(users);
-
-            currentUser.name = newName;
-            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
-        }
-    }
-}
-
-function getWatchHistory() {
-    const history = localStorage.getItem('watchHistory');
-    return history ? JSON.parse(history) : [];
-}
-
-function addToWatchHistory(item) {
-    const history = getWatchHistory();
-    const existingIndex = history.findIndex(h => h.id === item.id && h.type === item.type);
-
-    if (existingIndex !== -1) {
-        history.splice(existingIndex, 1);
-    }
-
-    history.unshift({
-        ...item,
-        watchedAt: new Date().toISOString()
-    });
-
-    if (history.length > 50) {
-        history.pop();
-    }
-
-    localStorage.setItem('watchHistory', JSON.stringify(history));
-}
-
-function getRatings() {
-    const ratings = localStorage.getItem('ratings');
-    return ratings ? JSON.parse(ratings) : [];
-}
-
-function addRating(item, rating) {
-    const ratings = getRatings();
-    const existingIndex = ratings.findIndex(r => r.id === item.id && r.type === item.type);
-
-    if (existingIndex !== -1) {
-        ratings[existingIndex].rating = rating;
-    } else {
-        ratings.push({
-            ...item,
-            rating,
-            ratedAt: new Date().toISOString()
+    try {
+        const response = await fetch('/api/user/update-name', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ name: newName.trim() })
         });
+
+        if (!response.ok) throw new Error('Update failed');
+
+        const updatedUser = await response.json();
+
+        localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+        return true;
+    } catch (error) {
+        console.error('Name update failed:', error);
+        return false;
     }
-
-    localStorage.setItem('ratings', JSON.stringify(ratings));
 }
 
-function getRating(id, type) {
-    const ratings = getRatings();
-    const rating = ratings.find(r => r.id === id && r.type === type);
-    return rating ? rating.rating : 0;
+// ──────────────────────────────────────────────────────────────
+// Watch History & Ratings (Backend version)
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Get full watch history from backend
+ */
+async function getWatchHistory() {
+    const token = getToken();
+    if (!token) return [];
+
+    try {
+        const response = await fetch('/api/history', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) logout();
+            return [];
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Failed to fetch history:', error);
+        return [];
+    }
 }
+
+/**
+ * Add movie/tv/anime to watch history
+ * @param {Object} item - { id, type, title, poster }
+ */
+async function addToWatchHistory(item) {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+        await fetch('/api/history/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(item)
+        });
+        // No need to handle local state anymore - backend manages it
+    } catch (error) {
+        console.error('Failed to add to history:', error);
+    }
+}
+
+/**
+ * Get user ratings from backend
+ */
+async function getRatings() {
+    const token = getToken();
+    if (!token) return [];
+
+    try {
+        const response = await fetch('/api/ratings', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) logout();
+            return [];
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Failed to fetch ratings:', error);
+        return [];
+    }
+}
+
+/**
+ * Add or update rating for an item
+ */
+async function addRating(item, rating) {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+        await fetch('/api/ratings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                ...item,
+                rating: Number(rating)
+            })
+        });
+    } catch (error) {
+        console.error('Failed to save rating:', error);
+    }
+}
+
+/**
+ * Get rating for specific content
+ */
+async function getRating(id, type) {
+    const ratings = await getRatings();
+    const found = ratings.find(r => r.id === id && r.type === type);
+    return found ? found.rating : 0;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Export everything (same interface as before)
+// ──────────────────────────────────────────────────────────────
+
+export {
+    register,
+    login,
+    logout,
+    getCurrentUser,
+    isLoggedIn,
+    checkAuth,
+    updateUserName,
+    getWatchHistory,
+    addToWatchHistory,
+    getRatings,
+    addRating,
+    getRating,
+    // Optional: keep for fallback/future use
+    generateAvatarUrl
+};

@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    { "src": "/api/auth/(.*)", "dest": "/api/auth/$1" },
+    { "src": "/api/watchlist/(.*)", "dest": "/api/watchlist/$1" },
+    { "src": "/api/history/(.*)", "dest": "/api/history/$1" },
+    { "handle": "filesystem" }
+  ]
+}
